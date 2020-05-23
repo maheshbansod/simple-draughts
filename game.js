@@ -78,6 +78,15 @@ class Game {
         return false;
     }
 
+    /**
+     * 
+     * @brief performs the click operation on a specific place on the board and takes
+     *          appropriate action
+     * 
+     * @param {Number} x x-coordinated taken from left of canvas
+     * @param {Number} y y-coordinate taken from top of canvas
+     * 
+     */
     handleClick(x, y) {
         //tile size
         var ts = this.ctx.canvas.width/this.size;
