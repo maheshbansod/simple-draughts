@@ -34,6 +34,7 @@ class Game {
 
         this.turn = 2;
         this.total_moves = 0;
+        this.mandatory_capture = true;
     }
 
     /*play() {
@@ -53,13 +54,24 @@ class Game {
     }
 
     /**
-     * @brief Find possible moves for a piece . ONLY RETURNS JUMPS . TODO: CAPTURE MOVES
+     * @brief Find possible moves for a piece
      * 
      * @param {Object {i,j}} piece Piece
      * 
      * @returns array containing the possible moves.
      */
     findPossibleMovesFor(piece) {
+
+        var moves = [];
+
+        var captree = this.getCaptureTree(piece);
+        console.log(captree);
+        if(captree.length != 0) {
+            moves.push({type:'capture',move:captree});
+            if(this.mandatory_capture)
+                return moves;
+        }
+
         var i=piece.i, j=piece.j;
         var adjs=[];
         adjs.push({j:j-1},{j:j+1})
@@ -67,21 +79,38 @@ class Game {
             adjs[0].i = adjs[1].i = i+1;
         } else adjs[0].i = adjs[1].i = i-1;
         
-        var moves = [];
         for(var it=0;it<2;it++) {
             if(!this.isInside(adjs[it]))
                 continue;
             var p = this.board[adjs[it].i][adjs[it].j];
             if(p == 0) { // empty
                 moves.push({type:'jump',move:adjs[it]})
-            } else if(this.turn == p) continue; //same player's piece
-            else { //capture time maybe
-                //var captree = getCaptureTree(piece);
-                //captree
             }
         }
 
+
         return moves;
+    }
+
+    getCaptureTree(pos, tree=[]) {
+        var diri = 1-(this.turn-1)*2;
+        var adjl = {i:pos.i+diri, j:pos.j -1};
+        var adjr = {i:pos.i+diri, j:pos.j +1};
+        if(this.isInside(adjl)) {
+            var p = this.board[adjl.i][adjl.j];
+            var adjp = {i:adjl.i+diri, j:adjl.j-1};
+            if(p != 0 && p!=this.turn && this.isInside(adjp) && this.board[adjp.i][adjp.j]==0) {
+                tree.push({tokill:adjl, jumpat:adjp,nextcap:this.getCaptureTree(adjp)});
+            }
+        }
+        if(this.isInside(adjr)) {
+            var p = this.board[adjr.i][adjr.j];
+            var adjp = {i:adjr.i+diri, j:adjr.j+1};
+            if(p != 0 && p!=this.turn && this.isInside(adjp) && this.board[adjp.i][adjp.j]==0) {
+                tree.push({tokill:adjr, jumpat:adjp,nextcap:this.getCaptureTree(adjp)});
+            }
+        }
+        return tree;
     }
 
     /**
@@ -145,7 +174,14 @@ class Game {
                     if(elem.type=='jump')
                         this.board[elem.move.i][elem.move.j]=-12; //mark possible
                     else if(elem.type == 'capture') {
-                        ;
+                        var stack=[];
+                        stack = stack.concat(elem.move);
+                        while(stack.length != 0) {
+                            var top = stack.pop();
+                            var pstat = (top.nextcap.length != 0)?-13:-12; //FIND A BETTER METHOD THAN THIS
+                            this.board[top.jumpat.i][top.jumpat.j]=pstat; //TRY TO DO IT WITHOUT CHANGING BOARD
+                            stack = stack.concat(top.nextcap);
+                        }
                     }
                 });
                 this.drawBoard();
@@ -180,6 +216,7 @@ class Game {
             ctx.canvas.width = ctx.canvas.height = height;
         else ctx.canvas.width = ctx.canvas.height = width;
 
+        this.selected = null;
         this.drawBoard();
     }
 
@@ -208,10 +245,17 @@ class Game {
                     ctx.beginPath();
                     ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
                     ctx.fill();
-                } else if(this.selected && this.board[i][j] == -12) {
-                    ctx.fillStyle = 'green';
+                } else if(this.selected) {
+                    if(this.board[i][j] == -12) {
+                       ctx.fillStyle = 'green';
 
-                    ctx.fillRect(j*ts+ts/10, i*ts+ts/10, ts*4/5, ts*4/5);
+                        ctx.fillRect(j*ts+ts/10, i*ts+ts/10, ts*4/5, ts*4/5);
+                    } else if(this.board[i][j] == -13) {
+                        ctx.fillStyle = 'green';
+                        ctx.beginPath();
+                        ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
+                        ctx.fill();
+                    }
                 }
             }
         }
