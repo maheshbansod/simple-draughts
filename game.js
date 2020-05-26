@@ -32,9 +32,12 @@ class Game {
             }
         }
 
+        this.possibleMoves = null;
+
         this.turn = 2;
         this.total_moves = 0;
         this.mandatory_capture = true;
+        this.showPossibleMoves = true;
     }
 
     /*play() {
@@ -65,7 +68,6 @@ class Game {
         var moves = [];
 
         var captree = this.getCaptureTree(piece);
-        console.log(captree);
         if(captree.length != 0) {
             moves.push({type:'capture',move:captree});
             if(this.mandatory_capture)
@@ -170,25 +172,23 @@ class Game {
             if(this.turn == this.board[i][j]) {
                 this.selected = {i:i, j:j};
                 var possible = this.findPossibleMovesFor(this.selected);
+                this.possibleMoves = {possibles: possible,pboard:{ends:[], mids:[]}};
                 possible.forEach( (elem)=> {
                     if(elem.type=='jump')
-                        this.board[elem.move.i][elem.move.j]=-12; //mark possible
+                        this.possibleMoves.pboard.ends.push(elem.move) //set possible
                     else if(elem.type == 'capture') {
                         var stack=[];
                         stack = stack.concat(elem.move);
                         while(stack.length != 0) {
                             var top = stack.pop();
-                            var pstat = (top.nextcap.length != 0)?-13:-12; //FIND A BETTER METHOD THAN THIS
-                            this.board[top.jumpat.i][top.jumpat.j]=pstat; //TRY TO DO IT WITHOUT CHANGING BOARD
+                            if(top.nextcap.length != 0) this.possibleMoves.pboard.mids.push(top.jumpat);
+                            else this.possibleMoves.pboard.ends.push(top.jumpat);
                             stack = stack.concat(top.nextcap);
                         }
                     }
                 });
                 this.drawBoard();
-                possible.forEach( (elem)=> {
-                    if(elem.type=='jump')
-                        this.board[elem.move.i][elem.move.j]=0; //mark empty again.
-                }); 
+
             }
         } else { //clicked on blank space - so either (TODO:make a move) or deselect.
 
@@ -246,15 +246,16 @@ class Game {
                     ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
                     ctx.fill();
                 } else if(this.selected) {
-                    if(this.board[i][j] == -12) {
-                       ctx.fillStyle = 'green';
-
-                        ctx.fillRect(j*ts+ts/10, i*ts+ts/10, ts*4/5, ts*4/5);
-                    } else if(this.board[i][j] == -13) {
-                        ctx.fillStyle = 'green';
-                        ctx.beginPath();
-                        ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
-                        ctx.fill();
+                    if(this.showPossibleMoves) {
+                        ctx.fillStyle = '#0f0';
+                        this.possibleMoves.pboard.ends.forEach((pos)=>(
+                            ctx.fillRect(pos.j*ts+ts/10, pos.i*ts+ts/10, ts*4/5, ts*4/5)
+                        ));
+                        this.possibleMoves.pboard.mids.forEach((pos)=>{
+                            ctx.beginPath();
+                            ctx.arc((2*pos.j+1)*ts/2, (2*pos.i+1)*ts/2, ts*2/5, 0, 2*Math.PI)
+                            ctx.fill();
+                        });
                     }
                 }
             }
