@@ -33,6 +33,7 @@ class Game {
         }
 
         this.possibleMoves = null;
+        this.intermeds = [];
 
         this.turn = 2;
         this.total_moves = 0;
@@ -181,8 +182,10 @@ class Game {
                         stack = stack.concat(elem.move);
                         while(stack.length != 0) {
                             var top = stack.pop();
-                            if(top.nextcap.length != 0) this.possibleMoves.pboard.mids.push(top.jumpat);
-                            else this.possibleMoves.pboard.ends.push(top.jumpat);
+                            if(top.nextcap.length != 0)
+                                this.possibleMoves.pboard.mids.push(top.jumpat);
+                            else
+                                this.possibleMoves.pboard.ends.push(top.jumpat);
                             stack = stack.concat(top.nextcap);
                         }
                     }
@@ -192,16 +195,49 @@ class Game {
             }
         } else { //clicked on blank space - so either (TODO:make a move) or deselect.
 
+            var isintermed=false;
             if(this.selected) {
-                //TODO: check if move is capture or jump and take appropriate action
+                //TODO: check if obligatory capture setting
 
-                if(this.isJumpabble(this.selected,{i,j})) {
-                    this.makeJump(this.selected, {i,j})
+                if(this.isJumpabble(this.selected,{i,j})) { //a simple jump
+                    this.makeJump(this.selected, {i,j});
                     this.nextTurn();
+                } else if(this.possibleMoves.pboard.ends.some((el)=>(el.i==i && el.j==j))) {//capturing move maybe
+                    var captrees = this.possibleMoves.possibles[0].move; //first move will be capturing - ensured by findPossibleMoves function
+
+                    var endm = {i:i,j:j};
+                    if(captrees) {
+                        var stack = [];
+                        stack = stack.concat(captrees);
+                        while(stack.length != 0) {
+                            var top = stack.pop();
+                            if(this.intermeds.some((el)=>(el.i==top.jumpat.i && el.j==top.jumpat.j))) {
+                                stack = stack.concat(top.nextcap);
+                            } else if(endm.i == top.jumpat.i && endm.j == top.jumpat.j) { //reached the last position
+                                this.board[top.tokill.i][top.tokill.j] = 0; //set empty;
+                                while(stack.length != 0) {
+                                    var tokill = stack.pop().tokill;
+                                    this.board[tokill.i][tokill.j] = 0; //set empty
+                                }
+                                this.board[this.selected.i][this.selected.j]=0;//selected element moved
+                                this.board[endm.i][endm.j]=this.turn;
+
+                                this.nextTurn();
+                                break;
+                            }
+                        }
+                    }
+                } else if(this.possibleMoves.pboard.mids.some((el)=>(el.i==i && el.j==j))) { //clicked on intermediate move while capture
+                    this.intermeds.push({i:i,j:j});
+                    isintermed = true;
                 }
             }
 
-            this.selected = null;
+            if(!isintermed) {
+                this.selected = null;
+                this.possibleMoves = null;
+                this.intermeds = [];
+            }
             this.drawBoard();
         }
     }
@@ -252,9 +288,14 @@ class Game {
                             ctx.fillRect(pos.j*ts+ts/10, pos.i*ts+ts/10, ts*4/5, ts*4/5)
                         ));
                         this.possibleMoves.pboard.mids.forEach((pos)=>{
+                            ctx.fillStyle = '#0f0';
                             ctx.beginPath();
-                            ctx.arc((2*pos.j+1)*ts/2, (2*pos.i+1)*ts/2, ts*2/5, 0, 2*Math.PI)
+                            ctx.arc((2*pos.j+1)*ts/2, (2*pos.i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
                             ctx.fill();
+                            if(this.intermeds.includes(pos)) {
+                                ctx.fillStyle = '#f00';
+                                ctx.arc((2*pos.j+1)*ts/2, (2*pos.i+1)*ts/2, ts*2/9, 0, 2*Math.PI)
+                            }
                         });
                     }
                 }
