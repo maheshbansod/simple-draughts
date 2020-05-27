@@ -199,7 +199,8 @@ class Game {
             if(this.selected) {
                 //TODO: check if obligatory capture setting
 
-                if(this.isJumpabble(this.selected,{i,j})) { //a simple jump
+                if(this.possibleMoves.possibles.some((el)=>el.type=='jump'
+                    && el.move.i == i && el.move.j == j)) { //a simple jump
                     this.makeJump(this.selected, {i,j});
                     this.nextTurn();
                 } else if(this.possibleMoves.pboard.ends.some((el)=>(el.i==i && el.j==j))) {//capturing move maybe
@@ -252,7 +253,7 @@ class Game {
             ctx.canvas.width = ctx.canvas.height = height;
         else ctx.canvas.width = ctx.canvas.height = width;
 
-        this.selected = null;
+        //this.selected = null;
         this.drawBoard();
     }
 
@@ -292,9 +293,10 @@ class Game {
                             ctx.beginPath();
                             ctx.arc((2*pos.j+1)*ts/2, (2*pos.i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
                             ctx.fill();
-                            if(this.intermeds.includes(pos)) {
-                                ctx.fillStyle = '#f00';
-                                ctx.arc((2*pos.j+1)*ts/2, (2*pos.i+1)*ts/2, ts*2/9, 0, 2*Math.PI)
+                            if(this.intermeds.some((el)=>el.i==pos.i && el.j == pos.j)) {
+                                ctx.fillStyle = '#ff0';
+                                ctx.arc((2*pos.j+1)*ts/2, (2*pos.i+1)*ts/2, ts/10 , 0, 2*Math.PI)
+                                ctx.fill();
                             }
                         });
                     }
