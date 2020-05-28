@@ -73,6 +73,14 @@ class Game {
             moves.push({type:'capture',move:captree});
             if(this.mandatory_capture)
                 return moves;
+        } else if(this.mandatory_capture) {
+            for(var i=0;i<this.size;i++)
+                for(var j=0;j<this.size;j++)
+                    if(this.turn == this.board[i][j]) {
+                        if(this.canCapture({i:i,j:j})) {
+                            return [];
+                        }
+                    }
         }
 
         var i=piece.i, j=piece.j;
@@ -95,6 +103,41 @@ class Game {
         return moves;
     }
 
+    /**
+     * @brief just checks if a piece can capture any other piece.[for normal piece]
+     * 
+     * @param {Object {i,j}} piece 
+     * 
+     * @returns if capturing move is possible by `piece` returns true, returns false otherwise.
+     */
+    canCapture(piece) {
+        var pobed = this.board[piece.i][piece.j];
+        if(pobed == 0)
+            return false;
+        var opps = Number(!(pobed%2));
+        var diri = -((pobed-1)*2-1);
+        var adjl = {i:piece.i+diri, j:piece.j-1}, adjr = {i:piece.i+diri, j:piece.j+1};
+        if(this.isInside(adjl) && this.board[adjl.i][adjl.j]!=0 &&this.board[adjl.i][adjl.j]%2 == opps) {
+            var jspace = {i:adjl.i+diri, j:adjl.j-1};
+            if(this.isInside(jspace) && this.board[jspace.i][jspace.j]==0)
+                return true;
+        }
+        if(this.isInside(adjr) && this.board[adjr.i][adjr.j]!=0 && this.board[adjr.i][adjr.j]%2 == opps) {
+            var jspace = {i:adjr.i+diri, j:adjr.j+1};
+            if(this.isInside(jspace) && this.board[jspace.i][jspace.j]==0)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * @brief creates a tree which contains possible captures from position i,j for a normal piece
+     * 
+     * @param {i,j} pos 
+     * @param {i,j} tree 
+     * 
+     * @returns the capture tree.
+     */
     getCaptureTree(pos, tree=[]) {
         var diri = 1-(this.turn-1)*2;
         var adjl = {i:pos.i+diri, j:pos.j -1};
