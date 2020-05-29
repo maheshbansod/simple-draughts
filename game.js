@@ -35,6 +35,8 @@ class Game {
         this.possibleMoves = null;
         this.intermeds = [];
 
+        this.piecesn = [0, 15,15];
+
         this.turn = 2;
         this.total_moves = 0;
         this.mandatory_capture = true;
@@ -196,6 +198,14 @@ class Game {
         return false;
     }
 
+    /**
+     * 
+     * 
+     * @param Array[{tokill, jumpat, nextcap}] captrees 
+     * @param {i,j} endm 
+     * 
+     * @returns the number of pieces captured
+     */
     makeCapture(captrees, endm) {
         var stack = [];
         stack = stack.concat(captrees);
@@ -205,6 +215,7 @@ class Game {
                 stack = stack.concat(top.nextcap);
             } else if(endm.i == top.jumpat.i && endm.j == top.jumpat.j) { //reached the last position
                 this.board[top.tokill.i][top.tokill.j] = 0; //set empty;
+                var kills = stack.length;
                 while(stack.length != 0) {
                     var tokill = stack.pop().tokill;
                     this.board[tokill.i][tokill.j] = 0; //set empty
@@ -212,10 +223,10 @@ class Game {
                 this.board[this.selected.i][this.selected.j]=0;//selected element moved
                 this.board[endm.i][endm.j]=this.turn;
 
-                this.nextTurn();
-                break;
+                return kills;
             }
         }
+        return 0;
     }
 
     /**
@@ -274,7 +285,12 @@ class Game {
 
                     var endm = {i:i,j:j};
                     if(captrees) {
-                        this.makeCapture(captrees, endm); //attempts capture move
+                        var kills = this.makeCapture(captrees, endm); //attempts capture move
+
+                        if(kills > 0) {
+                            this.nextTurn();
+                            this.piecesn[this.turn] -= kills;
+                        }
                     }
                 } else if(this.possibleMoves.pboard.mids.some((el)=>(el.i==i && el.j==j))) { //clicked on intermediate move while capture
                     this.intermeds.push({i:i,j:j});
@@ -294,6 +310,14 @@ class Game {
     nextTurn() {
         this.turn = (this.turn == 1)?2:1;
         this.total_moves++;
+    }
+
+    hasLost(player) {
+        return this.piecesn[player]==0;
+    }
+
+    hasWon(player) {
+        return this.piecesn[(player==1)?2:1]==0;
     }
 
     resizeCanvas(width, height) {
