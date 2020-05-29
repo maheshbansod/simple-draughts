@@ -196,6 +196,28 @@ class Game {
         return false;
     }
 
+    makeCapture(captrees, endm) {
+        var stack = [];
+        stack = stack.concat(captrees);
+        while(stack.length != 0) {
+            var top = stack.pop();
+            if(this.intermeds.some((el)=>(el.i==top.jumpat.i && el.j==top.jumpat.j))) {
+                stack = stack.concat(top.nextcap);
+            } else if(endm.i == top.jumpat.i && endm.j == top.jumpat.j) { //reached the last position
+                this.board[top.tokill.i][top.tokill.j] = 0; //set empty;
+                while(stack.length != 0) {
+                    var tokill = stack.pop().tokill;
+                    this.board[tokill.i][tokill.j] = 0; //set empty
+                }
+                this.board[this.selected.i][this.selected.j]=0;//selected element moved
+                this.board[endm.i][endm.j]=this.turn;
+
+                this.nextTurn();
+                break;
+            }
+        }
+    }
+
     /**
      * 
      * @brief performs the click operation on a specific place on the board and takes
@@ -236,7 +258,7 @@ class Game {
                 this.drawBoard();
 
             }
-        } else { //clicked on blank space - so either (TODO:make a move) or deselect.
+        } else { //clicked on blank space - so either make a move or deselect.
 
             var isintermed=false;
             if(this.selected) {
@@ -247,29 +269,12 @@ class Game {
                     this.makeJump(this.selected, {i,j});
                     this.nextTurn();
                 } else if(this.possibleMoves.pboard.ends.some((el)=>(el.i==i && el.j==j))) {//capturing move maybe
+                    
                     var captrees = this.possibleMoves.possibles[0].move; //first move will be capturing - ensured by findPossibleMoves function
 
                     var endm = {i:i,j:j};
                     if(captrees) {
-                        var stack = [];
-                        stack = stack.concat(captrees);
-                        while(stack.length != 0) {
-                            var top = stack.pop();
-                            if(this.intermeds.some((el)=>(el.i==top.jumpat.i && el.j==top.jumpat.j))) {
-                                stack = stack.concat(top.nextcap);
-                            } else if(endm.i == top.jumpat.i && endm.j == top.jumpat.j) { //reached the last position
-                                this.board[top.tokill.i][top.tokill.j] = 0; //set empty;
-                                while(stack.length != 0) {
-                                    var tokill = stack.pop().tokill;
-                                    this.board[tokill.i][tokill.j] = 0; //set empty
-                                }
-                                this.board[this.selected.i][this.selected.j]=0;//selected element moved
-                                this.board[endm.i][endm.j]=this.turn;
-
-                                this.nextTurn();
-                                break;
-                            }
-                        }
+                        this.makeCapture(captrees, endm); //attempts capture move
                     }
                 } else if(this.possibleMoves.pboard.mids.some((el)=>(el.i==i && el.j==j))) { //clicked on intermediate move while capture
                     this.intermeds.push({i:i,j:j});
