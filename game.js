@@ -41,6 +41,9 @@ class Game {
         this.total_moves = 0;
         this.mandatory_capture = true;
         this.showPossibleMoves = true;
+
+        this.crownimg = document.createElement('img')
+        this.crownimg.src = 'crown.png';
     }
 
     /*play() {
@@ -171,7 +174,14 @@ class Game {
      * @returns
      */
     makeJump(piece, fpos) {
-        this.board[fpos.i][fpos.j] = this.turn; //piece moved
+
+        if(this.turn == 1 && fpos.i == this.size-1) {//reached last row
+            this.board[piece.i][piece.j] += 2; //promote to king
+        } else if(this.turn == 2 && fpos.i == 0) { //reached last row
+            this.board[piece.i][piece.j] += 2; //promote to king
+        }
+
+        this.board[fpos.i][fpos.j] = this.board[piece.i][piece.j]; //piece moved
         this.board[piece.i][piece.j] = 0; //set position empty
     }
 
@@ -215,7 +225,7 @@ class Game {
                 stack = stack.concat(top.nextcap);
             } else if(endm.i == top.jumpat.i && endm.j == top.jumpat.j) { //reached the last position
                 this.board[top.tokill.i][top.tokill.j] = 0; //set empty;
-                var kills = stack.length;
+                var kills = stack.length+1;
                 while(stack.length != 0) {
                     var tokill = stack.pop().tokill;
                     this.board[tokill.i][tokill.j] = 0; //set empty
@@ -348,12 +358,15 @@ class Game {
                 ctx.fillRect(j*ts, i*ts, ts, ts);
 
                 //draw piece
-                if(this.board[i][j]==1 || this.board[i][j]==2) {
-                    ctx.fillStyle = this.piececolors[this.board[i][j]-1];
+                if(this.board[i][j]>=1 && this.board[i][j]<=4) {
+                    ctx.fillStyle = this.piececolors[(this.board[i][j]+1)%2];
 
                     ctx.beginPath();
                     ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
                     ctx.fill();
+                    if(this.board[i][j]>=3) {//add crown
+                        ctx.drawImage(this.crownimg, j*ts, i*ts, ts, ts);
+                    }
                 } else if(this.selected) {
                     if(this.showPossibleMoves) {
                         ctx.fillStyle = '#0f0';
