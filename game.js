@@ -175,13 +175,15 @@ class Game {
      */
     makeJump(piece, fpos) {
 
-        if(this.turn == 1 && fpos.i == this.size-1) {//reached last row
-            this.board[piece.i][piece.j] += 2; //promote to king
-        } else if(this.turn == 2 && fpos.i == 0) { //reached last row
-            this.board[piece.i][piece.j] += 2; //promote to king
+        var pp = this.board[piece.i][piece.j];
+
+        if(pp <= 2)
+        if( (pp == 1 && fpos.i == this.size-1)
+        ||  (pp == 2 && fpos.i == 0)) {//reached last row
+            pp += 2; //promote to king
         }
 
-        this.board[fpos.i][fpos.j] = this.board[piece.i][piece.j]; //piece moved
+        this.board[fpos.i][fpos.j] = pp; //piece moved
         this.board[piece.i][piece.j] = 0; //set position empty
     }
 
@@ -230,8 +232,15 @@ class Game {
                     var tokill = stack.pop().tokill;
                     this.board[tokill.i][tokill.j] = 0; //set empty
                 }
+                var piecem = this.board[this.selected.i][this.selected.j];
+                if(piecem <= 2) {
+                    if((endm.i == this.size-1 && piecem == 1)
+                        || (endm.i == 0 && piecem == 2)) {// piece reached last row
+                        piecem += 2; //promote to king
+                    }
+                }
                 this.board[this.selected.i][this.selected.j]=0;//selected element moved
-                this.board[endm.i][endm.j]=this.turn;
+                this.board[endm.i][endm.j]=piecem;
 
                 return kills;
             }
