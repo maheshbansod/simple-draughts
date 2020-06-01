@@ -30,6 +30,8 @@ class Game {
                     this.board[this.size-i-1][j]=2; //pieces that start below
                 }
             }
+            //this.board[0][0] = 1;
+            //this.board[4][this.size -1] = 3;
         }
 
         this.possibleMoves = null;
@@ -90,12 +92,18 @@ class Game {
 
         var i=piece.i, j=piece.j;
         var adjs=[];
-        adjs.push({j:j-1},{j:j+1})
-        if(this.turn == 1) {//the pieces that go from top to bottom
+        adjs.push({j:j-1},{j:j+1});
+        var pb = this.board[i][j];
+        if(pb == 1) {//the pieces that go from top to bottom
             adjs[0].i = adjs[1].i = i+1;
-        } else adjs[0].i = adjs[1].i = i-1;
+        } else if(pb==2) //only bottom to top
+            adjs[0].i = adjs[1].i = i-1;
+        else if(pb >= 3) { //can move in any direction
+            adjs[0].i = adjs[1].i = i-1;
+            adjs.push({j:j-1,i:i+1},{j:j+1,i:i+1});
+        }
         
-        for(var it=0;it<2;it++) {
+        for(var it=0;it<adjs.length;it++) {
             if(!this.isInside(adjs[it]))
                 continue;
             var p = this.board[adjs[it].i][adjs[it].j];
@@ -265,7 +273,7 @@ class Game {
 
         if(this.board[i][j] != 0) {
             //set `selected` based on turn
-            if(this.turn == this.board[i][j]) {
+            if(this.turn%2 == this.board[i][j]%2) {
                 this.selected = {i:i, j:j};
                 var possible = this.findPossibleMovesFor(this.selected);
                 this.possibleMoves = {possibles: possible,pboard:{ends:[], mids:[]}};
