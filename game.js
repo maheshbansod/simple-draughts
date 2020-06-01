@@ -21,7 +21,7 @@ class Game {
         } else {
 
             //create board and put pieces on board.
-            this.board = new  Array(this.size).fill(0).map(()=>(new Array(this.size).fill(0)));
+            /*this.board = new  Array(this.size).fill(0).map(()=>(new Array(this.size).fill(0)));
             for(var i=0;i<3;i++) {
                 for(var j=i%2;j<this.size;j+=2) {
                     this.board[i][j]=1; //piece that start above
@@ -29,9 +29,13 @@ class Game {
                 for(var j=(i+1)%2;j<this.size;j+=2) {
                     this.board[this.size-i-1][j]=2; //pieces that start below
                 }
-            }
+            }*/
             //this.board[0][0] = 1;
             //this.board[3][this.size -1] = 2;
+            var str = "0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,2,0,2,0,0,2,0,0,0,0,0,0,0,0,2,0,2,0,2,0,2,0,0,2,0,3,0,2,0,0,0,2,0,0,0,0,0,0,2,0,2,0,0";
+            var arr = str.split(',').map((x)=>Number(x));
+            this.board = [];
+            while(arr.length) this.board.push(arr.splice(0,10));
         }
 
         this.possibleMoves = null;
@@ -39,7 +43,7 @@ class Game {
 
         this.piecesn = [0, 15,15];
 
-        this.turn = 2;
+        this.turn = 1;
         this.total_moves = 0;
         this.mandatory_capture = true;
         this.showPossibleMoves = true;
@@ -153,8 +157,9 @@ class Game {
      * 
      * @returns the capture tree.
      */
-    getCaptureTree(pos, tree=[]) {
-        var cpb = this.board[pos.i][pos.j];
+    getCaptureTree(pos, pp = null) {
+        var tree = [];
+        var cpb = pp||this.board[pos.i][pos.j];
         var diri = 1-((cpb-1)%2)*2;
         var adjl = {i:pos.i+diri, j:pos.j -1};
         var adjr = {i:pos.i+diri, j:pos.j +1};
@@ -168,7 +173,10 @@ class Game {
             var p = this.board[adjs[i].i][adjs[i].j];
             var adjp = {i:adjs[i].i-(Math.floor(i/2)*2-1)*diri, j: adjs[i].j+( (i%2)*2 -1)};
             if(p != 0 && p%2 != cpb%2 && this.isInside(adjp) && this.board[adjp.i][adjp.j] == 0) {
-                tree.push({tokill:adjs[i], jumpat:adjp, nextcap:this.getCaptureTree(adjp)});
+                var oldpiece = this.board[adjs[i].i][adjs[i].j];
+                this.board[adjs[i].i][adjs[i].j] = 0; //temporarily make it empty
+                tree.push({tokill:adjs[i], jumpat:adjp, nextcap:this.getCaptureTree(adjp, cpb)});
+                this.board[adjs[i].i][adjs[i].j] = oldpiece;
             }
         }
 
