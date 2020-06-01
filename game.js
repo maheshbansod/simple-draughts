@@ -31,7 +31,7 @@ class Game {
                 }
             }
             //this.board[0][0] = 1;
-            //this.board[4][this.size -1] = 3;
+            //this.board[3][this.size -1] = 2;
         }
 
         this.possibleMoves = null;
@@ -74,6 +74,7 @@ class Game {
     findPossibleMovesFor(piece) {
 
         var moves = [];
+        var cp = this.board[piece.i][piece.j];
 
         var captree = this.getCaptureTree(piece);
         if(captree.length != 0) {
@@ -83,7 +84,7 @@ class Game {
         } else if(this.mandatory_capture) {
             for(var i=0;i<this.size;i++)
                 for(var j=0;j<this.size;j++)
-                    if(this.turn == this.board[i][j]) {
+                    if(this.board[i][j] != 0 && cp%2 == this.board[i][j]%2) {
                         if(this.canCapture({i:i,j:j})) {
                             return [];
                         }
@@ -127,18 +128,19 @@ class Game {
         var pobed = this.board[piece.i][piece.j];
         if(pobed == 0)
             return false;
-        var opps = Number(!(pobed%2));
-        var diri = -((pobed-1)*2-1);
+        //var opps = Number(!(pobed%2)); //opposite parity
+        var diri = -(( (pobed-1)%2 )*2-1);
         var adjl = {i:piece.i+diri, j:piece.j-1}, adjr = {i:piece.i+diri, j:piece.j+1};
-        if(this.isInside(adjl) && this.board[adjl.i][adjl.j]!=0 &&this.board[adjl.i][adjl.j]%2 == opps) {
-            var jspace = {i:adjl.i+diri, j:adjl.j-1};
-            if(this.isInside(jspace) && this.board[jspace.i][jspace.j]==0)
-                return true;
-        }
-        if(this.isInside(adjr) && this.board[adjr.i][adjr.j]!=0 && this.board[adjr.i][adjr.j]%2 == opps) {
-            var jspace = {i:adjr.i+diri, j:adjr.j+1};
-            if(this.isInside(jspace) && this.board[jspace.i][jspace.j]==0)
-                return true;
+        var adjs = [adjl, adjr];
+        if(pobed >= 3) adjs = adjs.concat([{i:piece.i-diri,j:adjl.j},{i:piece.i-diri, j:adjr.j}]);
+
+        for(var i=0;i<adjs.length;i++) {
+            if(this.isInside(adjs[i]) && this.board[adjs[i].i][adjs[i].j]!=0 
+            && this.board[adjs[i].i][adjs[i].j]%2 != pobed%2) {
+                var jspace = {i: adjs[i].i - ( Math.floor(i/2)*2-1 )*diri, j:adjs[i].j+( (i%2)*2-1 )}; //jump space
+                if(this.isInside(jspace) && this.board[jspace.i][jspace.j]==0)
+                    return true;
+            }
         }
         return false;
     }
@@ -152,23 +154,24 @@ class Game {
      * @returns the capture tree.
      */
     getCaptureTree(pos, tree=[]) {
-        var diri = 1-(this.turn-1)*2;
+        var cpb = this.board[pos.i][pos.j];
+        var diri = 1-((cpb-1)%2)*2;
         var adjl = {i:pos.i+diri, j:pos.j -1};
         var adjr = {i:pos.i+diri, j:pos.j +1};
-        if(this.isInside(adjl)) {
-            var p = this.board[adjl.i][adjl.j];
-            var adjp = {i:adjl.i+diri, j:adjl.j-1};
-            if(p != 0 && p!=this.turn && this.isInside(adjp) && this.board[adjp.i][adjp.j]==0) {
-                tree.push({tokill:adjl, jumpat:adjp,nextcap:this.getCaptureTree(adjp)});
+        var adjs = [adjl, adjr];
+        if(cpb >= 3) adjs = adjs.concat([{i:pos.i-diri, j:adjl.j},{i:pos.i-diri,j:adjr.j}])
+
+        for(var i=0;i<adjs.length;i++) {
+            if(!this.isInside(adjs[i])) {
+                continue;
+            }
+            var p = this.board[adjs[i].i][adjs[i].j];
+            var adjp = {i:adjs[i].i-(Math.floor(i/2)*2-1)*diri, j: adjs[i].j+( (i%2)*2 -1)};
+            if(p != 0 && p%2 != cpb%2 && this.isInside(adjp) && this.board[adjp.i][adjp.j] == 0) {
+                tree.push({tokill:adjs[i], jumpat:adjp, nextcap:this.getCaptureTree(adjp)});
             }
         }
-        if(this.isInside(adjr)) {
-            var p = this.board[adjr.i][adjr.j];
-            var adjp = {i:adjr.i+diri, j:adjr.j+1};
-            if(p != 0 && p!=this.turn && this.isInside(adjp) && this.board[adjp.i][adjp.j]==0) {
-                tree.push({tokill:adjr, jumpat:adjp,nextcap:this.getCaptureTree(adjp)});
-            }
-        }
+
         return tree;
     }
 
