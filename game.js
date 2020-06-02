@@ -239,16 +239,26 @@ class Game {
      */
     makeCapture(captrees, endm) {
         var stack = [];
+        var stack2 = []; //kill stack
         stack = stack.concat(captrees);
         while(stack.length != 0) {
             var top = stack.pop();
             if(this.intermeds.some((el)=>(el.i==top.jumpat.i && el.j==top.jumpat.j))) {
                 stack = stack.concat(top.nextcap);
+                stack2.push(top);
             } else if(endm.i == top.jumpat.i && endm.j == top.jumpat.j) { //reached the last position
+                
+                if(top.nextcap.length > 0) {
+                    console.log(top.nextcap);
+                    stack = stack.concat(top.nextcap);
+                    stack2.push(top);
+                    continue;
+                }
+                
                 this.board[top.tokill.i][top.tokill.j] = 0; //set empty;
-                var kills = stack.length+1;
-                while(stack.length != 0) {
-                    var tokill = stack.pop().tokill;
+                var kills = 1 + stack2.length;
+                while(stack2.length != 0) {
+                    var tokill = stack2.pop().tokill;
                     this.board[tokill.i][tokill.j] = 0; //set empty
                 }
                 var piecem = this.board[this.selected.i][this.selected.j];
