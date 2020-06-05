@@ -21,7 +21,7 @@ class Game {
         } else {
 
             //create board and put pieces on board.
-            /*this.board = new  Array(this.size).fill(0).map(()=>(new Array(this.size).fill(0)));
+            this.board = new  Array(this.size).fill(0).map(()=>(new Array(this.size).fill(0)));
             for(var i=0;i<3;i++) {
                 for(var j=i%2;j<this.size;j+=2) {
                     this.board[i][j]=1; //piece that start above
@@ -29,19 +29,19 @@ class Game {
                 for(var j=(i+1)%2;j<this.size;j+=2) {
                     this.board[this.size-i-1][j]=2; //pieces that start below
                 }
-            }*/
+            }
             //this.board[0][0] = 1;
             //this.board[3][this.size -1] = 2;
-            var str = "0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,2,0,2,0,0,2,0,0,0,0,0,0,0,0,2,0,2,0,2,0,2,0,0,2,0,3,0,2,0,0,0,2,0,0,0,0,0,0,2,0,2,0,0";
-            var arr = str.split(',').map((x)=>Number(x));
-            this.board = [];
-            while(arr.length) this.board.push(arr.splice(0,10));
+            //var str = "0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,2,0,2,0,0,2,0,0,0,0,0,0,0,0,2,0,2,0,2,0,2,0,0,2,0,3,0,2,0,0,0,2,0,0,0,0,0,0,2,0,2,0,0";
+            //var arr = str.split(',').map((x)=>Number(x));
+            //this.board = [];
+            //while(arr.length) this.board.push(arr.splice(0,10));
         }
 
         this.possibleMoves = null;
         this.intermeds = [];
 
-        this.piecesn = [0, 15,15];
+        this.piecesn = [0, 1,1];
 
         this.turn = 1;
         this.total_moves = 0;
@@ -321,7 +321,6 @@ class Game {
 
             var isintermed=false;
             if(this.selected) {
-                //TODO: check if obligatory capture setting
 
                 if(this.possibleMoves.possibles.some((el)=>el.type=='jump'
                     && el.move.i == i && el.move.j == j)) { //a simple jump
@@ -338,6 +337,11 @@ class Game {
                         if(kills > 0) {
                             this.nextTurn();
                             this.piecesn[this.turn] -= kills;
+
+                            if(this.hasLost(this.turn)) {
+                                this.gameEndedMessage();
+                                this.turn = -1;
+                            }
                         }
                     }
                 } else if(this.possibleMoves.pboard.mids.some((el)=>(el.i==i && el.j==j))) { //clicked on intermediate move while capture
@@ -375,6 +379,17 @@ class Game {
 
         //this.selected = null;
         this.drawBoard();
+    }
+
+    /**
+     * this function must be overriden so that 
+     * the message can be shown on the UI instead of console.log
+     */
+    gameEndedMessage() {
+        if(this.hasWon(1)) {
+            return("Black won");
+        } else if(this.hasWon(2))
+            return("Red won");
     }
 
     drawBoard() {

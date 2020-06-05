@@ -13,8 +13,15 @@
         </style>
     </head>
     <body>
+        <div style="display: flex; flex-direction: column;">
+            <div id="statusdiv">
+            </div>
         <div class = "canvascontainer">
             <canvas id="gamecanvas"></canvas>
+        </div>
+        <div>
+            
+        </div>
         </div>
         <script src="game.js"></script>
         <script>
@@ -22,9 +29,9 @@
 
             game = new Game(ctx);
 
-            game.resizeCanvas(window.innerWidth, window.innerHeight);
+            game.resizeCanvas(window.innerWidth*4/5, window.innerHeight*4/5);
             window.addEventListener('resize', () => {
-                game.resizeCanvas(window.innerWidth, window.innerHeight);
+                game.resizeCanvas(window.innerWidth*4/5, window.innerHeight*4/5);
                 game.drawBoard();
             });
 
@@ -34,6 +41,20 @@
                 var y = event.pageY - canvas.offsetTop;
                 game.handleClick(x,y);
             });
+
+            canvas.addEventListener('click',function(event) {
+                updateStatus();
+            })
+
+            function updateStatus() {
+                var turn = game.turn;
+                var statdiv = document.getElementById('statusdiv');
+                if(turn != -1) {
+                    statdiv.innerHTML = (turn==1)?"Turn: Black":"Turn: Red";
+                } else {
+                    statdiv.innerHTML = game.gameEndedMessage();
+                }
+            }
 
             game.drawBoard();
 
