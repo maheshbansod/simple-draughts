@@ -84,14 +84,38 @@ class Game {
         return (pos.i < this.board.length && pos.i >= 0 && pos.j >= 0 && pos.j < this.board[0].length);
     }
 
+    /**
+     * TODO
+     * @brief performs move on board and removes that move from move array
+     * 
+     * @param {Array[{i,j}]} moves
+     * @param {Array[]} board
+     * 
+     * @returns the move that was removed
+     */
+    doMoveAndPop(moves, board=this.board) {
+        var move = moves.pop();
+        /*if() {
+            this.makeJump(board);
+            return move;
+        }*/
+    }
+
+    /**
+     * 
+     * @param {i,j} player 
+     * @param {Array[]} board 
+     */
     findPossibleMoves(player=this.turn, board=this.board) {
         var moves = [];
         for(var i=0;i<this.size;i++) {
             for(var j=0;j<this.size;j++) {
                 if(board[i][j]==player) {
                     var pmoves = this.findPossibleMovesFor({i:i,j:j});
-                    if(pmoves.length > 0)
-                        moves.push({piece: {i:i,j:j}, moves:pmoves});
+                    if(pmoves.length > 0) {
+                        pmoves.forEach((elem)=> elem.piece={i:i,j:j});
+                        moves=moves.concat(pmoves);
+                    }
                 }
             }
         }
@@ -222,9 +246,9 @@ class Game {
      * 
      * @returns
      */
-    makeJump(piece, fpos) {
+    makeJump(piece, fpos, board=this.board) {
 
-        var pp = this.board[piece.i][piece.j];
+        var pp = board[piece.i][piece.j];
 
         if(pp <= 2)
         if( (pp == 1 && fpos.i == this.size-1)
@@ -232,8 +256,8 @@ class Game {
             pp += 2; //promote to king
         }
 
-        this.board[fpos.i][fpos.j] = pp; //piece moved
-        this.board[piece.i][piece.j] = 0; //set position empty
+        board[fpos.i][fpos.j] = pp; //piece moved
+        board[piece.i][piece.j] = 0; //set position empty
     }
 
     /**
