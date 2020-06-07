@@ -21,21 +21,21 @@ class Game {
         } else {
 
             //create board and put pieces on board.
-            this.board = new  Array(this.size).fill(0).map(()=>(new Array(this.size).fill(0)));
-            for(var i=0;i<3;i++) {
-                for(var j=i%2;j<this.size;j+=2) {
-                    this.board[i][j]=1; //piece that start above
-                }
-                for(var j=(i+1)%2;j<this.size;j+=2) {
-                    this.board[this.size-i-1][j]=2; //pieces that start below
-                }
-            }
+            // this.board = new  Array(this.size).fill(0).map(()=>(new Array(this.size).fill(0)));
+            // for(var i=0;i<3;i++) {
+            //     for(var j=i%2;j<this.size;j+=2) {
+            //         this.board[i][j]=1; //piece that start above
+            //     }
+            //     for(var j=(i+1)%2;j<this.size;j+=2) {
+            //         this.board[this.size-i-1][j]=2; //pieces that start below
+            //     }
+            // }
             //this.board[0][0] = 1;
             //this.board[3][this.size -1] = 2;
-            //var str = "0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,2,0,2,0,0,2,0,0,0,0,0,0,0,0,2,0,2,0,2,0,2,0,0,2,0,3,0,2,0,0,0,2,0,0,0,0,0,0,2,0,2,0,0";
-            //var arr = str.split(',').map((x)=>Number(x));
-            //this.board = [];
-            //while(arr.length) this.board.push(arr.splice(0,10));
+            var str = "0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,2,0,2,0,0,2,0,0,0,0,0,0,0,0,2,0,2,0,2,0,2,0,0,2,0,3,0,2,0,0,0,2,0,0,0,0,0,0,2,0,2,0,0";
+            var arr = str.split(',').map((x)=>Number(x));
+            this.board = [];
+            while(arr.length) this.board.push(arr.splice(0,10));
         }
 
         this.hasai = true;
@@ -134,9 +134,10 @@ class Game {
         var moves = [];
         var cp = this.board[piece.i][piece.j];
 
-        var captree = this.getCaptureTree(piece);
-        if(captree.length != 0) {
-            moves.push({type:'capture',move:captree});
+        var capmoves = this.getCaptureMoves(piece);
+        if(capmoves.length != 0) {
+            //moves.push({type:'capture',move:captree});
+            moves=moves.concat(capmoves);
             if(this.mandatory_capture)
                 return moves;
         } else if(this.mandatory_capture) {
@@ -204,16 +205,16 @@ class Game {
     }
 
     /**
-     * TODO: make it so that each capture move is a different element of array
-     * @brief creates a tree which contains possible captures from position i,j for a normal piece
+     * @brief creates an array which contains possible captures from position i,j for a normal piece
      * 
-     * @param {i,j} pos 
-     * @param {i,j} tree 
+     * @param {i,j} pos position to find captures from
+     * @param {i,j} pp . piece that initiated the capture
      * 
-     * @returns the capture tree.
+     * @returns array containing possible capture moves
      */
-    getCaptureTree(pos, pp = null) {
+    getCaptureMoves(pos, pp = null) {
         var tree = [];
+        //var capath = [{type: 'capture', moves:[]}];
         var cpb = pp||this.board[pos.i][pos.j];
         var diri = 1-((cpb-1)%2)*2;
         var adjl = {i:pos.i+diri, j:pos.j -1};
@@ -230,8 +231,15 @@ class Game {
             if(p != 0 && p%2 != cpb%2 && this.isInside(adjp) && this.board[adjp.i][adjp.j] == 0) {
                 var oldpiece = this.board[adjs[i].i][adjs[i].j];
                 this.board[adjs[i].i][adjs[i].j] = 0; //temporarily make it empty
-                tree.push({tokill:adjs[i], jumpat:adjp, nextcap:this.getCaptureTree(adjp, cpb)});
-                this.board[adjs[i].i][adjs[i].j] = oldpiece;
+                //tree.push({tokill:adjs[i], jumpat:adjp, nextcap:this.getCaptureTree(adjp, cpb)});
+                //capath.moves.push({tokill:adjs[i], jumpat:adjp});
+                var killmove = [{tokill:adjs[i], jumpat:adjp}];
+                var nextpaths = this.getCaptureMoves(adjp, cpb);
+                if(nextpaths.length > 0) {
+                    nextpaths.forEach( (el)=> tree.push({type:'capture', moves:killmove.concat(el.moves)}));
+                } else
+                    tree.push({type:'capture',moves:killmove});
+                this.board[adjs[i].i][adjs[i].j] = oldpiece; //fill again with original piece
             }
         }
 
