@@ -204,6 +204,7 @@ class Game {
     }
 
     /**
+     * TODO: make it so that each capture move is a different element of array
      * @brief creates a tree which contains possible captures from position i,j for a normal piece
      * 
      * @param {i,j} pos 
@@ -458,6 +459,9 @@ class Game {
             for(var j=0;j<this.size;j++) {
 
                 //draw board tile
+                // if(this.selected && this.selected.i == i && this.selected.j == j)
+                //     ctx.fillStyle='#060';
+                // else
                 if( ((i+j)%2) == 0 ) {
                     ctx.fillStyle = '#8b4513'; //brown
                 } else ctx.fillStyle = '#fff'; //white
@@ -466,14 +470,7 @@ class Game {
 
                 //draw piece
                 if(this.board[i][j]>=1 && this.board[i][j]<=4) {
-                    ctx.fillStyle = this.piececolors[(this.board[i][j]+1)%2];
-
-                    ctx.beginPath();
-                    ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
-                    ctx.fill();
-                    if(this.board[i][j]>=3) {//add crown
-                        ctx.drawImage(this.crownimg, j*ts, i*ts, ts, ts);
-                    }
+                    this.drawPiece({i:i,j:j}, this.board[i][j], ts);
                 } else if(this.selected) {
                     if(this.showPossibleMoves) {
                         ctx.fillStyle = '#0f0';
@@ -498,10 +495,30 @@ class Game {
         //draw over selected piece
         if(this.selected) {
             var i = this.selected.i, j = this.selected.j;
-            ctx.strokeStyle = '#0ff';
+            ctx.strokeStyle = '#fff';
             ctx.beginPath();
             ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
             ctx.stroke();
+            // ctx.strokeRect(j*ts, i*ts, ts, ts);
+        }
+    }
+
+    drawPiece(pos, piece, width) {
+        var ctx = this.ctx;
+        var {i,j} = pos;
+        var ts = width;
+
+        ctx.beginPath();
+        ctx.fillStyle = '#432008'; //shadow
+        ctx.arc( (2*j+1)*ts/2-ts/10, (2*i+1)*ts/2+ts/10, ts*2/5, 0, 2*Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = this.piececolors[(piece+1)%2]; //piece
+        ctx.beginPath();    
+        ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
+        ctx.fill();
+        if(piece>=3) {//add crown
+            ctx.drawImage(this.crownimg, j*ts, i*ts, ts, ts);
         }
     }
 };
