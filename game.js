@@ -231,8 +231,6 @@ class Game {
             if(p != 0 && p%2 != cpb%2 && this.isInside(adjp) && this.board[adjp.i][adjp.j] == 0) {
                 var oldpiece = this.board[adjs[i].i][adjs[i].j];
                 this.board[adjs[i].i][adjs[i].j] = 0; //temporarily make it empty
-                //tree.push({tokill:adjs[i], jumpat:adjp, nextcap:this.getCaptureTree(adjp, cpb)});
-                //capath.moves.push({tokill:adjs[i], jumpat:adjp});
                 var killmove = [{tokill:adjs[i], jumpat:adjp}];
                 var nextpaths = this.getCaptureMoves(adjp, cpb);
                 if(nextpaths.length > 0) {
@@ -292,49 +290,55 @@ class Game {
         return false;
     }
 
+    doCapture(from, capmove, board =this.board) {
+        capmove.forEach((el)=>{
+            board[el.tokill.i][el.tokill.j]=0;//kill
+        });
+        //then jump
+        var jumpat = capmove[capmove.length-1].jumpat;
+        board[jumpat.i][jumpat.j] = board[from.i][from.j];
+        board[from.i][from.j] = 0;
+    }
+
     /**
      * 
      * 
-     * @param Array[{tokill, jumpat, nextcap}] captrees 
-     * @param {i,j} endm 
+     * @param Array[{type:'capture',moves:{[tokill, jumpat]}}] capmoves
+     * @param {i,j} endm final position after capture
      * 
      * @returns the number of pieces captured
      */
-    makeCapture(captrees, endm) {
-        var stack = [];
-        var stack2 = []; //kill stack
-        stack = stack.concat(captrees);
-        while(stack.length != 0) {
-            var top = stack.pop();
-            if(this.intermeds.some((el)=>(el.i==top.jumpat.i && el.j==top.jumpat.j))) {
-                stack = stack.concat(top.nextcap);
-                stack2.push(top);
-            } else if(endm.i == top.jumpat.i && endm.j == top.jumpat.j) { //reached the last position
-                
-                if(top.nextcap.length > 0) {
-                    console.log(top.nextcap);
-                    stack = stack.concat(top.nextcap);
-                    stack2.push(top);
-                    continue;
-                }
-                
-                this.board[top.tokill.i][top.tokill.j] = 0; //set empty;
-                var kills = 1 + stack2.length;
-                while(stack2.length != 0) {
-                    var tokill = stack2.pop().tokill;
-                    this.board[tokill.i][tokill.j] = 0; //set empty
-                }
-                var piecem = this.board[this.selected.i][this.selected.j];
-                if(piecem <= 2) {
-                    if((endm.i == this.size-1 && piecem == 1)
-                        || (endm.i == 0 && piecem == 2)) {// piece reached last row
-                        piecem += 2; //promote to king
+    makeCapture(capmoves, endm) {
+
+        for(var i=0;i<capmoves.length;i++) {
+            var fpos = capmoves[i].moves.slice(-1)[0].jumpat;
+            if(fpos.i == endm.i && fpos.j == endm.j) { //endpoint of this move is endm
+                //so let's see if the intermeds are all selected
+
+                var d=[];
+                //create array with unique elements
+                var caparr = capmoves[i].moves.map( (el)=>el.jumpat ).filter( (el, i, arr) => {
+                    if(d[el.i+","+el.j])
+                        return false;
+                    else {
+                        d[el.i+","+el.j]=1;
+                        return true;
+                    }
+                });
+                var usarr = this.intermeds.concat([endm]);
+                if(caparr.length !== usarr.length) continue;
+                var notsame = false;
+                for(var j=0;j<caparr.length;j++) {
+                    if( !usarr.some( (el)=>(el.i == caparr[i].i && el.j==caparr[i].j) )) {
+                        notsame = true;
+                        break;
                     }
                 }
-                this.board[this.selected.i][this.selected.j]=0;//selected element moved
-                this.board[endm.i][endm.j]=piecem;
+                if(notsame) continue;
+                //at this point both sets are same. so make the move
+                this.doCapture(this.selected, capmoves[i].moves);
 
-                return kills;
+                return capmoves[i].moves.length;
             }
         }
         return 0;
@@ -361,20 +365,13 @@ class Game {
                 this.selected = {i:i, j:j};
                 var possible = this.findPossibleMovesFor(this.selected);
                 this.possibleMoves = {possibles: possible,pboard:{ends:[], mids:[]}};
+                //fill ends and mids
                 possible.forEach( (elem)=> {
                     if(elem.type=='jump')
                         this.possibleMoves.pboard.ends.push(elem.move) //set possible
                     else if(elem.type == 'capture') {
-                        var stack=[];
-                        stack = stack.concat(elem.move);
-                        while(stack.length != 0) {
-                            var top = stack.pop();
-                            if(top.nextcap.length != 0)
-                                this.possibleMoves.pboard.mids.push(top.jumpat);
-                            else
-                                this.possibleMoves.pboard.ends.push(top.jumpat);
-                            stack = stack.concat(top.nextcap);
-                        }
+                        this.possibleMoves.pboard.ends.push(elem.moves.slice(-1)[0].jumpat); //possible capture end
+                        this.possibleMoves.pboard.mids = this.possibleMoves.pboard.mids.concat(elem.moves.slice(0,elem.moves.length-1).map((el)=>el.jumpat));
                     }
                 });
                 this.drawBoard();
@@ -391,11 +388,12 @@ class Game {
                     this.nextTurn();
                 } else if(this.possibleMoves.pboard.ends.some((el)=>(el.i==i && el.j==j))) {//capturing move maybe
                     
-                    var captrees = this.possibleMoves.possibles[0].move; //first move will be capturing - ensured by findPossibleMoves function
 
+                    var capmoves = this.possibleMoves.possibles;
                     var endm = {i:i,j:j};
-                    if(captrees) {
-                        var kills = this.makeCapture(captrees, endm); //attempts capture move
+
+                    if(capmoves) {
+                        var kills = this.makeCapture(capmoves, endm); //attempts capture move
 
                         if(kills > 0) {
                             this.nextTurn();
