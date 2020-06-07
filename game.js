@@ -38,6 +38,8 @@ class Game {
             //while(arr.length) this.board.push(arr.splice(0,10));
         }
 
+        this.hasai = true;
+
         this.possibleMoves = null;
         this.intermeds = [];
 
@@ -52,9 +54,23 @@ class Game {
         this.crownimg.src = 'crown.png';
     }
 
-    /*play() {
-        maybe make it using a game loop or sthing in the future?
-        this.drawBoard();
+    /**
+     * This function will play one turn of the player whose turn it is.
+     */
+    /*playTurn() {
+        var board = copy present board; //or maybe do and undo moves on the actual board?
+        var possibleMoves = this.findPossibleMoves(board, player);
+        for (move in possibleMoves) {
+            this.doMove(move, board);
+            
+            movescore = this.minmaxscore(board, player);
+            if(maxscore < movescore) {
+                bestmove = move;
+                maxscore = movescore;
+            }
+        }
+
+        this.doMove(bestmove, this.board);
     }*/
 
     /**
