@@ -43,7 +43,7 @@ class Game {
         this.possibleMoves = null;
         this.intermeds = [];
 
-        this.piecesn = [0, 1,1];
+        this.piecesn = [0, 15,15];
 
         this.turn = 1;
         this.total_moves = 0;
@@ -85,11 +85,11 @@ class Game {
     }
 
     findPossibleMoves(player=this.turn, board=this.board) {
-        moves = [];
+        var moves = [];
         for(var i=0;i<this.size;i++) {
             for(var j=0;j<this.size;j++) {
                 if(board[i][j]==player) {
-                    pmoves = this.findPossibleMovesFor({i:i,j:j});
+                    var pmoves = this.findPossibleMovesFor({i:i,j:j});
                     if(pmoves.length > 0)
                         moves.push({piece: {i:i,j:j}, moves:pmoves});
                 }
