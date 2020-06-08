@@ -1,6 +1,6 @@
 
 class Game {
-    constructor(ctx, size = 10, piececolors=['black','red'], board=null) {
+    constructor(ctx, size = 10, piececolors=['#222','red'], board=null) {
         this.ctx = ctx;
         this.piececolors = piececolors;
 
@@ -21,21 +21,21 @@ class Game {
         } else {
 
             //create board and put pieces on board.
-            // this.board = new  Array(this.size).fill(0).map(()=>(new Array(this.size).fill(0)));
-            // for(var i=0;i<3;i++) {
-            //     for(var j=i%2;j<this.size;j+=2) {
-            //         this.board[i][j]=1; //piece that start above
-            //     }
-            //     for(var j=(i+1)%2;j<this.size;j+=2) {
-            //         this.board[this.size-i-1][j]=2; //pieces that start below
-            //     }
-            // }
+            this.board = new  Array(this.size).fill(0).map(()=>(new Array(this.size).fill(0)));
+            for(var i=0;i<3;i++) {
+                for(var j=i%2;j<this.size;j+=2) {
+                    this.board[i][j]=1; //piece that start above
+                }
+                for(var j=(i+1)%2;j<this.size;j+=2) {
+                    this.board[this.size-i-1][j]=2; //pieces that start below
+                }
+            }
             //this.board[0][0] = 1;
             //this.board[3][this.size -1] = 2;
-            var str = "0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,2,0,2,0,0,2,0,0,0,0,0,0,0,0,2,0,2,0,2,0,2,0,0,2,0,3,0,2,0,0,0,2,0,0,0,0,0,0,2,0,2,0,0";
-            var arr = str.split(',').map((x)=>Number(x));
-            this.board = [];
-            while(arr.length) this.board.push(arr.splice(0,10));
+            // var str = "0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,2,0,2,0,0,2,0,0,0,0,0,0,0,0,2,0,2,0,2,0,2,0,0,2,0,3,0,2,0,0,0,2,0,0,0,0,0,0,2,0,2,0,0";
+            // var arr = str.split(',').map((x)=>Number(x));
+            // this.board = [];
+            // while(arr.length) this.board.push(arr.splice(0,10));
         }
 
         this.hasai = true;
@@ -514,15 +514,48 @@ class Game {
         var {i,j} = pos;
         var ts = width;
 
+        var cx =(2*j+1)*ts/2, cy=(2*i+1)*ts/2; //center point
+        var r = ts*2/5; //radius
+
         ctx.beginPath();
         ctx.fillStyle = '#432008'; //shadow
-        ctx.arc( (2*j+1)*ts/2-ts/10, (2*i+1)*ts/2+ts/10, ts*2/5, 0, 2*Math.PI);
+        ctx.arc( cx-ts/10, cy+ts/10, r, 0, 2*Math.PI);
         ctx.fill();
 
-        ctx.fillStyle = this.piececolors[(piece+1)%2]; //piece
+        var pcolor = this.piececolors[(piece+1)%2];
+        ctx.fillStyle = pcolor; //piece
         ctx.beginPath();    
-        ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
+        ctx.arc( cx, cy, r, 0, 2*Math.PI);
         ctx.fill();
+
+        //adding some shine and shadow
+
+
+        var shinew = 2, shiner = r-shinew;
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(cx,cy,shiner,  0, Math.PI/2);
+        ctx.fill();
+        ctx.fillStyle = pcolor;
+        ctx.beginPath();
+        ctx.arc(cx, cy, shiner-shinew, 0, 2*Math.PI);
+        ctx.fill();
+
+        if((piece+1)%2==0) {
+            ctx.fillStyle = '#000';
+        } else {
+            ctx.fillStyle = '#b00';
+        }
+        var ringst = 3*r/4, ringw = 3;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringst, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.fillStyle = pcolor;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringst-ringw, 0, 2*Math.PI);
+        ctx.fill();
+
+
         if(piece>=3) {//add crown
             ctx.drawImage(this.crownimg, j*ts, i*ts, ts, ts);
         }
