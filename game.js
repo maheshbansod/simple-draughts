@@ -70,7 +70,7 @@ class Game {
 
         if(this.hasWonOnBoard(player, board)) {
             score = 10;
-        } else if(this.hasLostonBoard(player,board)) {
+        } else if(this.hasLostOnBoard(player,board)) {
             score =  -10;
         } else if(depth==this.minmax_depth_limit) {
             score = this.intermediateScore(player, board);
@@ -184,7 +184,7 @@ class Game {
             return true;
     }
 
-    hasLostonBoard(player, board=this.board) {
+    hasLostOnBoard(player, board=this.board) {
         var cp = 0; //player pieces count;
 
         for(var i=0;i<this.size;i++)
@@ -215,7 +215,7 @@ class Game {
         var moves = [];
         for(var i=0;i<this.size;i++) {
             for(var j=0;j<this.size;j++) {
-                if(board[i][j]==player) {
+                if(board[i][j]!=0 && board[i][j]%2==player%2) {
                     var pmoves = this.findPossibleMovesFor({i:i,j:j}, board);
                     if(pmoves.length > 0) {
                         pmoves.forEach((elem)=> elem.piece={i:i,j:j});
@@ -568,6 +568,7 @@ class Game {
 
     async makeMove(player=this.turn) {
         var move = this.findBestMove(player);
+        console.log(move);
         this.doMove(move);
     }
 
