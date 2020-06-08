@@ -39,18 +39,19 @@ class Game {
         }
 
         this.hasai = true;
+        this.isai = [0,1,0]; //set black to AI
 
         this.possibleMoves = null;
         this.intermeds = [];
 
         this.piecesn = [0, 15,15];
 
-        this.turn = 1;
+        this.turn = 2;
         this.total_moves = 0;
         this.mandatory_capture = true;
         this.showPossibleMoves = true;
 
-        this.minmax_depth_limit = 5;
+        this.minmax_depth_limit = 4; //>5 makes it lag for more than two seconds
 
         this.crownimg = document.createElement('img')
         this.crownimg.src = 'crown.png';
@@ -489,6 +490,8 @@ class Game {
         //get board coords from click coords
         var i = Math.floor(y/ts), j = Math.floor(x/ts);
 
+        if(this.hasai && this.isai[this.turn]) //ignore if AI's turn to play
+            return;
         if(this.board[i][j] != 0) {
             //set `selected` based on turn
             if(this.turn%2 == this.board[i][j]%2) {
@@ -516,6 +519,7 @@ class Game {
                     && el.move.i == i && el.move.j == j)) { //a simple jump
                     this.makeJump(this.selected, {i,j});
                     this.nextTurn();
+                    //console.log("hello hello\nhello hello");
                 } else if(this.possibleMoves.pboard.ends.some((el)=>(el.i==i && el.j==j))) {//capturing move maybe
                     
 
@@ -529,7 +533,7 @@ class Game {
                             this.nextTurn();
                             this.piecesn[this.turn] -= kills;
 
-                            if(this.hasLost(this.turn)) {
+                            if(this.hasLostOnBoard(this.turn, this.board)) {
                                 this.gameEndedMessage();
                                 this.turn = -1;
                             }
@@ -548,11 +552,35 @@ class Game {
             }
             this.drawBoard();
         }
+
+
+    }
+
+    async callNextTurn() {
+        if(this.hasai) {
+            if(this.isai[this.turn]) {
+                await this.makeMove(this.turn);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async makeMove(player=this.turn) {
+        var move = this.findBestMove(player);
+        this.doMove(move);
     }
 
     nextTurn() {
         this.turn = (this.turn == 1)?2:1;
         this.total_moves++;
+        this.callNextTurn().then((moved)=>{
+            if(moved==true) {
+                this.drawBoard();
+                this.nextTurn();
+            }
+        });//.then(()=>{console.log("yo1")});
+        //console.log('yoyo!')
     }
 
     hasLost(player) {
@@ -689,5 +717,7 @@ class Game {
         if(piece>=3) {//add crown
             ctx.drawImage(this.crownimg, j*ts, i*ts, ts, ts);
         }
+
+
     }
 };
