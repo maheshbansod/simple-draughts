@@ -108,6 +108,7 @@ class Game {
     }
 
     /**
+     * FIX THIS after adding to webworker.. also see NEGAMAX
      * This function will find the best move for `player` based on the current board state.
      */
     findBestMove(player=this.turn) {
@@ -568,7 +569,6 @@ class Game {
 
     async makeMove(player=this.turn) {
         var move = this.findBestMove(player);
-        console.log(move);
         this.doMove(move);
     }
 
