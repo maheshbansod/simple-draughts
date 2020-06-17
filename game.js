@@ -57,7 +57,7 @@ class Game {
         this.crownimg.src = 'crown.png';
     }
 
-    minmaxscore(move, player, mboard=this.board, depth=1) {
+    minmaxscore(move, player, mboard=this.board, depth=1, alpha, beta) {
         var board = mboard; //trying without copying
         //mboard.map( (row)=>Array.from(row) ); //copy board
 
@@ -68,9 +68,9 @@ class Game {
         if(player == 1) mult=-1;
         else mult = 1;
 
-        if(this.hasWonOnBoard(player, board)) {
+        if(this.hasWonOnBoard(2, board)) {
             score = 10;
-        } else if(this.hasLostOnBoard(player,board)) {
+        } else if(this.hasLostOnBoard(2,board)) {
             score =  -10;
         } else if(depth==this.minmax_depth_limit) {
             score = this.intermediateScore(player, board);
@@ -80,11 +80,14 @@ class Game {
 
             var possibleMoves = this.findPossibleMoves(opponent, board);
 
-            var totalscore = 0;
+            var bestscore = (player==2)?-Infinity:Infinity, sc=0;
             possibleMoves.forEach( (move)=> {
-                totalscore += this.minmaxscore(move, opponent, board,depth+1);
+                sc = this.minmaxscore(move, opponent, board,depth+1);
+                if( (player==2 && sc > bestscore) ||
+                    (player==1 && sc < bestscore))
+                        bestscore = sc;
             });
-            score = totalscore;
+            score = bestscore;
         }
 
         this.undoMove(move, board, undoinfo.deadpieces);
@@ -121,7 +124,8 @@ class Game {
             
             var movescore = this.minmaxscore(move, player);
 
-            if(maxscore < movescore) {
+            if( (player==2 &&  maxscore < movescore)
+            || (player == 1) && maxscore > movescore) {
                 bestmove = move;
                 maxscore = movescore;
             }
