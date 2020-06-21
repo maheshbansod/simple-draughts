@@ -57,46 +57,6 @@ class Game {
         this.crownimg.src = 'crown.png';
     }
 
-    //CODE BELOW SENT IN THE WORKER aiworker.js
-    // minmaxscore(move, player, mboard=this.board, depth=1, alpha, beta) {
-    //     var board = mboard; //trying without copying
-    //     //mboard.map( (row)=>Array.from(row) ); //copy board
-
-    //     var undoinfo = this.doMove(move, board);
-    //     var score = 0;
-
-    //     var mult;
-    //     if(player == 1) mult=-1;
-    //     else mult = 1;
-
-    //     if(this.hasWonOnBoard(2, board)) {
-    //         score = 10;
-    //     } else if(this.hasLostOnBoard(2,board)) {
-    //         score =  -10;
-    //     } else if(depth==this.minmax_depth_limit) {
-    //         score = this.intermediateScore(player, board);
-    //     } else {
-
-    //         var opponent = (player==1)?2:1;
-
-    //         var possibleMoves = this.findPossibleMoves(opponent, board);
-
-    //         var bestscore = (player==2)?-Infinity:Infinity, sc=0;
-    //         possibleMoves.forEach( (move)=> {
-    //             sc = this.minmaxscore(move, opponent, board,depth+1);
-    //             if( (player==2 && sc > bestscore) ||
-    //                 (player==1 && sc < bestscore))
-    //                     bestscore = sc;
-    //         });
-    //         score = bestscore;
-    //     }
-
-    //     this.undoMove(move, board, undoinfo.deadpieces);
-    //     if(undoinfo.promoted) board[move.piece.i][move.piece.j]-=2; //demote if promoted
-
-    //     return mult*score;
-    // }
-
     /**
      * @brief just calculates how many more pieces `player` has
      */
@@ -110,30 +70,6 @@ class Game {
         //console.log(counts);
         return mult*(counts[1]+counts[3]*2 - counts[0] -counts[2]*2);
     }
-
-    // /**
-    //  * FIX THIS after adding to webworker.. also alphabeta pruning for minimax
-    //  * This function will find the best move for `player` based on the current board state.
-    //  */
-    // findBestMove(player=this.turn) {
-        
-    //     var possibleMoves = this.findPossibleMoves(player);
-    //     if(!possibleMoves) return;
-
-    //     var maxscore = 0, bestmove = possibleMoves[0];
-    //     possibleMoves.forEach( (move) => {
-            
-    //         var movescore = this.minmaxscore(move, player);
-
-    //         if( (player==2 &&  maxscore < movescore)
-    //         || (player == 1) && maxscore > movescore) {
-    //             bestmove = move;
-    //             maxscore = movescore;
-    //         }
-    //     });
-
-    //     return bestmove;
-    // }
 
     doMove(move, board=this.board) {
         var p = move.piece;
@@ -447,6 +383,8 @@ class Game {
      */
     makeCaptureWithEnd(capmoves, endm) {
 
+        this.moveposes = [];
+
         for(var i=0;i<capmoves.length;i++) {
             var fpos = capmoves[i].moves.slice(-1)[0].jumpat;
             if(fpos.i == endm.i && fpos.j == endm.j) { //endpoint of this move is endm
@@ -474,6 +412,11 @@ class Game {
                 if(notsame) continue;
                 //at this point both sets are same. so make the move
                 this.doCapture(this.selected, capmoves[i].moves);
+                //also setting the moveposes array to mark the board. MAYBE MAKE IT IN A DIFF FUNCTION LATER
+                this.moveposes = [this.selected];
+                capmoves[i].moves.forEach( (elem)=>{
+                    this.moveposes.push(elem.jumpat);
+                } );
 
                 return capmoves[i].moves.length;
             }
@@ -523,7 +466,9 @@ class Game {
 
                 if(this.possibleMoves.possibles.some((el)=>el.type=='jump'
                     && el.move.i == i && el.move.j == j)) { //a simple jump
+                    this.moveposes = [this.selected];
                     this.makeJump(this.selected, {i,j});
+                    this.moveposes.push({i:i,j:j});
                     this.nextTurn();
                     //console.log("hello hello\nhello hello");
                 } else if(this.possibleMoves.pboard.ends.some((el)=>(el.i==i && el.j==j))) {//capturing move maybe
@@ -574,17 +519,19 @@ class Game {
 
     makeMove(player=this.turn) {
         var worker = new Worker('aiworker.js');
-        console.log("working on best move.");
+        //console.log("working on best move.");
         var self = this;
         self.moveWorkingStart();
         worker.onmessage = function(e) {
             var move = e.data;
             self.doMove(move);
+            self.moveposes = [move.piece];
+            if(move.type == 'capture') {
+                move.moves.forEach( (elem)=> self.moveposes.push(elem.jumpat));
+            } else self.moveposes.push(move.move);
             self.drawBoard();
             self.nextTurn();
             self.moveWorkingDone();
-            //console.log("turn: ", self.turn);
-            //console.log("afternextturnturn: ", self.turn);
         }
         worker.postMessage([this.board, player]);
     }
@@ -593,8 +540,6 @@ class Game {
         this.turn = (this.turn == 1)?2:1;
         this.total_moves++;
         this.callNextTurn();
-        //.then(()=>{console.log("yo1")});
-        //console.log('yoyo!')
     }
 
     hasLost(player) {
@@ -610,7 +555,6 @@ class Game {
             ctx.canvas.width = ctx.canvas.height = height;
         else ctx.canvas.width = ctx.canvas.height = width;
 
-        //this.selected = null;
         this.drawBoard();
     }
 
@@ -686,6 +630,17 @@ class Game {
             ctx.arc( (2*j+1)*ts/2, (2*i+1)*ts/2, ts*2/5, 0, 2*Math.PI);
             ctx.stroke();
             // ctx.strokeRect(j*ts, i*ts, ts, ts);
+        } else if(this.moveposes && this.moveposes.length >0){ //mark the previous move
+            ctx.strokeStyle = "#0f0";
+            ctx.beginPath();
+            var cx = (2*this.moveposes[0].j+1)*ts/2, cy = (2*this.moveposes[0].i+1)*ts/2;
+            ctx.moveTo(cx, cy);
+            for(var i=1;i<this.moveposes.length;i++) {
+                cx = (2*this.moveposes[i].j+1)*ts/2;
+                cy = (2*this.moveposes[i].i+1)*ts/2;
+                ctx.lineTo(cx, cy);
+            }
+            ctx.stroke();
         }
     }
 
