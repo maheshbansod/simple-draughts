@@ -165,7 +165,7 @@ class Game {
         board[fpos.i][fpos.j]=0;
     }
 
-    undoCapture(from, moves, board=this.boad, deadpieces=null) {
+    undoCapture(from, moves, board=this.board, deadpieces=null) {
         if(!deadpieces)
             return;
         moves.forEach((el,i)=>{
