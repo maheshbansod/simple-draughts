@@ -6,7 +6,7 @@ onmessage = function(e) {
 
     var movefinder = new MoveFinder(board);
 
-    postMessage(movefinder.findBestMove(player, board));
+    postMessage(movefinder.findBestMove(player));
 };
 
 class MoveFinder {
@@ -32,10 +32,8 @@ class MoveFinder {
         if(player == 1) mult=-1;
         else mult = 1;
 
-        if(this.hasWonOnBoard(2, board)) {
+        if(this.hasWonOnBoard(player, board)) {
             score = 10;
-        } else if(this.hasLostOnBoard(2,board)) {
-            score =  -10;
         } else if(depth==this.minmax_depth_limit) {
             score = this.intermediateScore(player, board);
         } else {
@@ -44,19 +42,31 @@ class MoveFinder {
 
             var possibleMoves = this.findPossibleMoves(opponent, board);
 
-            var bestscore = (player==2)?-Infinity:Infinity, sc=0;
-            possibleMoves.forEach( (move)=> {
-                sc = this.minmaxscore(move, opponent, board,depth+1);
-                if( (player==2 && sc > bestscore) ||
-                    (player==1 && sc < bestscore))
-                        bestscore = sc;
-            });
-            score = bestscore;
+            //var bestscore = (player==2)?-Infinity:Infinity, sc=0;
+            if(opponent == 2) //maximum for opponent==1
+            score = possibleMoves.reduce( (bestscore, move) => {
+                score = this.minmaxscore(move, opponent, board, depth+1);
+                if(score > bestscore) return score;
+                else return bestscore;
+            }, -Infinity); else  //minimum for opponent==1
+            score = possibleMoves.reduce( (bestscore, move) => {
+                score = this.minmaxscore(move, opponent, board, depth+1);
+                if(score < bestscore) return score;
+                else return bestscore;
+            }, Infinity);
+            // possibleMoves.forEach( (move)=> {
+            //     sc = this.minmaxscore(move, opponent, board,depth+1);
+            //     if( (opponent==2 && sc > bestscore) ||
+            //         (opponent==1 && sc < bestscore))
+            //             bestscore = sc; //opponent chooses a best move.
+            // });
+            // score = bestscore;
         }
 
         this.undoMove(move, board, undoinfo.deadpieces);
         if(undoinfo.promoted) board[move.piece.i][move.piece.j]-=2; //demote if promoted
 
+        //self.console.log("forplayer:",player,"score:",score);
         return mult*score;
     }
 
@@ -78,22 +88,24 @@ class MoveFinder {
      * FIX THIS after adding to webworker.. also alphabeta pruning for minimax
      * This function will find the best move for `player` based on the current board state.
      */
-    findBestMove(player=this.turn) {
+    findBestMove(player) {
         
         var possibleMoves = this.findPossibleMoves(player);
         if(!possibleMoves) return;
 
-        var maxscore = 0, bestmove = possibleMoves[0];
+        var maxscore = (player==1)?Infinity:-Infinity, bestmove = possibleMoves[0];
         possibleMoves.forEach( (move) => {
             
             var movescore = this.minmaxscore(move, player);
+            //self.console.log("movescore:",movescore);
 
             if( (player==2 &&  maxscore < movescore)
-            || (player == 1) && maxscore > movescore) {
+            || (player == 1 && maxscore > movescore)) {
                 bestmove = move;
                 maxscore = movescore;
             }
         });
+        self.console.log(maxscore);
 
         return bestmove;
     }
@@ -128,7 +140,7 @@ class MoveFinder {
         board[fpos.i][fpos.j]=0;
     }
 
-    undoCapture(from, moves, board=this.boad, deadpieces=null) {
+    undoCapture(from, moves, board=this.board, deadpieces=null) {
         if(!deadpieces)
             return;
         moves.forEach((el,i)=>{
@@ -238,7 +250,7 @@ class MoveFinder {
      * @param {i,j} player 
      * @param {Array[]} board 
      */
-    findPossibleMoves(player=this.turn, board=this.board) {
+    findPossibleMoves(player, board=this.board) {
         var moves = [];
         for(var i=0;i<this.size;i++) {
             for(var j=0;j<this.size;j++) {
