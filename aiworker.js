@@ -6,7 +6,7 @@ onmessage = function(e) {
 
     var movefinder = new MoveFinder(board);
 
-    postMessage(movefinder.findBestMove(player));
+    postMessage(movefinder.findBestMove(player, board));
 };
 
 class MoveFinder {
@@ -14,6 +14,9 @@ class MoveFinder {
     constructor(board) {
         this.board = board;
         this.size = board.length;
+
+        //fix later to take these settings from game object
+        this.mandatory_capture = true;
 
         this.minmax_depth_limit = 5;
     }
