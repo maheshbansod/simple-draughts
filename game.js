@@ -562,7 +562,7 @@ class Game {
 
     }
 
-    async callNextTurn() {
+    callNextTurn() {
         if(this.hasai) {
             if(this.isai[this.turn]) {
                 this.makeMove(this.turn);
@@ -581,7 +581,10 @@ class Game {
             var move = e.data;
             self.doMove(move);
             self.drawBoard();
+            self.nextTurn();
             self.moveWorkingDone();
+            //console.log("turn: ", self.turn);
+            //console.log("afternextturnturn: ", self.turn);
         }
         worker.postMessage([this.board, player]);
     }
@@ -589,12 +592,8 @@ class Game {
     nextTurn() {
         this.turn = (this.turn == 1)?2:1;
         this.total_moves++;
-        this.callNextTurn().then((moved)=>{
-            if(moved==true) {
-                this.drawBoard();
-                this.nextTurn();
-            }
-        });//.then(()=>{console.log("yo1")});
+        this.callNextTurn();
+        //.then(()=>{console.log("yo1")});
         //console.log('yoyo!')
     }
 

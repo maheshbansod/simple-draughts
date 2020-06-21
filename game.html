@@ -12,7 +12,8 @@
             }
 
             #statusdiv {
-                text-align: right;
+                display: flex;
+                justify-content: space-between;
                 background-color: black;
                 color: white;
                 padding:10px;
@@ -27,19 +28,21 @@
     <body>
         <div style="display: flex; flex-direction: column;">
             <div id="statusdiv">
+                <div id="message"></div>
+                <div id="currentturn"></div>
             </div>
-        <div class = "canvascontainer">
-            <canvas id="gamecanvas"></canvas>
-        </div>
+            <div class = "canvascontainer">
+                <canvas id="gamecanvas"></canvas>
+            </div>
         <div>
-            
-        </div>
-        </div>
+
         <script src="game.js"></script>
         <script>
             var ctx = document.getElementById('gamecanvas').getContext('2d');
 
             game = new Game(ctx);
+            var statdiv = document.getElementById('currentturn');
+            var msgdiv = document.getElementById('message');
 
             game.resizeCanvas(window.innerWidth*4/5, window.innerHeight*4/5);
             window.addEventListener('resize', () => {
@@ -56,11 +59,20 @@
 
             canvas.addEventListener('click',function(event) {
                 updateStatus();
-            })
+            });
+
+            game.moveWorkingStart = () => {
+                msgdiv.innerHTML = "(player is thinking...)";
+                //console.log("this guy be working hard bruh");
+            }
+
+            game.moveWorkingDone = () => {
+                msgdiv.innerHTML = "";
+                updateStatus();
+            }
 
             function updateStatus() {
                 var turn = game.turn;
-                var statdiv = document.getElementById('statusdiv');
                 if(turn != -1) {
                     statdiv.innerHTML = (turn==1)?"Turn: Black":"Turn: Red";
                 } else {
