@@ -57,44 +57,45 @@ class Game {
         this.crownimg.src = 'crown.png';
     }
 
-    minmaxscore(move, player, mboard=this.board, depth=1, alpha, beta) {
-        var board = mboard; //trying without copying
-        //mboard.map( (row)=>Array.from(row) ); //copy board
+    //CODE BELOW SENT IN THE WORKER aiworker.js
+    // minmaxscore(move, player, mboard=this.board, depth=1, alpha, beta) {
+    //     var board = mboard; //trying without copying
+    //     //mboard.map( (row)=>Array.from(row) ); //copy board
 
-        var undoinfo = this.doMove(move, board);
-        var score = 0;
+    //     var undoinfo = this.doMove(move, board);
+    //     var score = 0;
 
-        var mult;
-        if(player == 1) mult=-1;
-        else mult = 1;
+    //     var mult;
+    //     if(player == 1) mult=-1;
+    //     else mult = 1;
 
-        if(this.hasWonOnBoard(2, board)) {
-            score = 10;
-        } else if(this.hasLostOnBoard(2,board)) {
-            score =  -10;
-        } else if(depth==this.minmax_depth_limit) {
-            score = this.intermediateScore(player, board);
-        } else {
+    //     if(this.hasWonOnBoard(2, board)) {
+    //         score = 10;
+    //     } else if(this.hasLostOnBoard(2,board)) {
+    //         score =  -10;
+    //     } else if(depth==this.minmax_depth_limit) {
+    //         score = this.intermediateScore(player, board);
+    //     } else {
 
-            var opponent = (player==1)?2:1;
+    //         var opponent = (player==1)?2:1;
 
-            var possibleMoves = this.findPossibleMoves(opponent, board);
+    //         var possibleMoves = this.findPossibleMoves(opponent, board);
 
-            var bestscore = (player==2)?-Infinity:Infinity, sc=0;
-            possibleMoves.forEach( (move)=> {
-                sc = this.minmaxscore(move, opponent, board,depth+1);
-                if( (player==2 && sc > bestscore) ||
-                    (player==1 && sc < bestscore))
-                        bestscore = sc;
-            });
-            score = bestscore;
-        }
+    //         var bestscore = (player==2)?-Infinity:Infinity, sc=0;
+    //         possibleMoves.forEach( (move)=> {
+    //             sc = this.minmaxscore(move, opponent, board,depth+1);
+    //             if( (player==2 && sc > bestscore) ||
+    //                 (player==1 && sc < bestscore))
+    //                     bestscore = sc;
+    //         });
+    //         score = bestscore;
+    //     }
 
-        this.undoMove(move, board, undoinfo.deadpieces);
-        if(undoinfo.promoted) board[move.piece.i][move.piece.j]-=2; //demote if promoted
+    //     this.undoMove(move, board, undoinfo.deadpieces);
+    //     if(undoinfo.promoted) board[move.piece.i][move.piece.j]-=2; //demote if promoted
 
-        return mult*score;
-    }
+    //     return mult*score;
+    // }
 
     /**
      * @brief just calculates how many more pieces `player` has
@@ -110,29 +111,29 @@ class Game {
         return mult*(counts[1]+counts[3]*2 - counts[0] -counts[2]*2);
     }
 
-    /**
-     * FIX THIS after adding to webworker.. also see NEGAMAX
-     * This function will find the best move for `player` based on the current board state.
-     */
-    findBestMove(player=this.turn) {
+    // /**
+    //  * FIX THIS after adding to webworker.. also alphabeta pruning for minimax
+    //  * This function will find the best move for `player` based on the current board state.
+    //  */
+    // findBestMove(player=this.turn) {
         
-        var possibleMoves = this.findPossibleMoves(player);
-        if(!possibleMoves) return;
+    //     var possibleMoves = this.findPossibleMoves(player);
+    //     if(!possibleMoves) return;
 
-        var maxscore = 0, bestmove = possibleMoves[0];
-        possibleMoves.forEach( (move) => {
+    //     var maxscore = 0, bestmove = possibleMoves[0];
+    //     possibleMoves.forEach( (move) => {
             
-            var movescore = this.minmaxscore(move, player);
+    //         var movescore = this.minmaxscore(move, player);
 
-            if( (player==2 &&  maxscore < movescore)
-            || (player == 1) && maxscore > movescore) {
-                bestmove = move;
-                maxscore = movescore;
-            }
-        });
+    //         if( (player==2 &&  maxscore < movescore)
+    //         || (player == 1) && maxscore > movescore) {
+    //             bestmove = move;
+    //             maxscore = movescore;
+    //         }
+    //     });
 
-        return bestmove;
-    }
+    //     return bestmove;
+    // }
 
     doMove(move, board=this.board) {
         var p = move.piece;
@@ -564,16 +565,25 @@ class Game {
     async callNextTurn() {
         if(this.hasai) {
             if(this.isai[this.turn]) {
-                await this.makeMove(this.turn);
+                this.makeMove(this.turn);
                 return true;
             }
         }
         return false;
     }
 
-    async makeMove(player=this.turn) {
-        var move = this.findBestMove(player);
-        this.doMove(move);
+    makeMove(player=this.turn) {
+        var worker = new Worker('aiworker.js');
+        console.log("working on best move.");
+        var self = this;
+        self.moveWorkingStart();
+        worker.onmessage = function(e) {
+            var move = e.data;
+            self.doMove(move);
+            self.drawBoard();
+            self.moveWorkingDone();
+        }
+        worker.postMessage([this.board, player]);
     }
 
     nextTurn() {
@@ -614,6 +624,14 @@ class Game {
             return("Black won");
         } else if(this.hasWon(2))
             return("Red won");
+    }
+
+    moveWorkingStart() {
+        console.log("thinking of a move");
+    }
+
+    moveWorkingDone() {
+        console.log("move working done");
     }
 
     drawBoard() {
