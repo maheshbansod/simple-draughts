@@ -21,6 +21,17 @@ class MoveFinder {
         this.minmax_depth_limit = 5;
     }
 
+    /**
+     * 
+     * @param {} move 
+     * @param {*} player 
+     * @param {*} mboard 
+     * @param {*} depth 
+     * @param {*} alpha 
+     * @param {*} beta 
+     * 
+     * @brief Implementation of Negamax with alpha-beta pruning
+     */
     minmaxscore(move, player, mboard=this.board, depth=1, alpha=-Infinity, beta=Infinity) {
         var board = mboard; //trying without copying
         //mboard.map( (row)=>Array.from(row) ); //copy board
@@ -42,27 +53,14 @@ class MoveFinder {
 
             var possibleMoves = this.findPossibleMoves(opponent, board);
 
-            //var bestscore = (player==2)?-Infinity:Infinity, sc=0;
-            if(opponent == 2) //maximum for opponent==1
-            {
-                var bestscore = -Infinity;
-                for(var i=0;i<possibleMoves.length;i++) {
-                    var opmove = possibleMoves[i];
-                    bestscore = Math.max(bestscore, this.minmaxscore(opmove, opponent, board, depth+1, alpha, beta));
-                    alpha = Math.max(bestscore, alpha);
-                    if(alpha >= beta) break;
-                }
-                score = bestscore;
-            } else {
-                var bestscore = Infinity;
-                for(var i=0;i<possibleMoves.length;i++) {
-                    var opmove = possibleMoves[i];
-                    bestscore = Math.min(bestscore, this.minmaxscore(opmove, opponent, board, depth+1, alpha, beta));
-                    beta = Math.min(bestscore, beta);
-                    if(alpha >= beta) break;
-                }
-                score = bestscore;
+            var bestscore = -Infinity;
+            for(var i=0;i<possibleMoves.length;i++) {
+                var opmove = possibleMoves[i];
+                bestscore = Math.max(bestscore, -this.minmaxscore(opmove, opponent, board, depth+1, -beta, -alpha));
+                alpha = Math.max(bestscore, alpha);
+                if(alpha >= beta) break;
             }
+            score = bestscore;
         }
 
         this.undoMove(move, board, undoinfo.deadpieces);
@@ -87,7 +85,6 @@ class MoveFinder {
     }
 
     /**
-     * FIX THIS after adding to webworker.. also alphabeta pruning for minimax
      * This function will find the best move for `player` based on the current board state.
      */
     findBestMove(player) {
