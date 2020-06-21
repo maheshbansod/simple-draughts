@@ -21,7 +21,7 @@ class MoveFinder {
         this.minmax_depth_limit = 5;
     }
 
-    minmaxscore(move, player, mboard=this.board, depth=1, alpha, beta) {
+    minmaxscore(move, player, mboard=this.board, depth=1, alpha=-Infinity, beta=Infinity) {
         var board = mboard; //trying without copying
         //mboard.map( (row)=>Array.from(row) ); //copy board
 
@@ -33,9 +33,9 @@ class MoveFinder {
         else mult = 1;
 
         if(this.hasWonOnBoard(player, board)) {
-            score = 10;
+            score = mult*10;
         } else if(depth==this.minmax_depth_limit) {
-            score = this.intermediateScore(player, board);
+            score = mult*this.intermediateScore(player, board);
         } else {
 
             var opponent = (player==1)?2:1;
@@ -44,30 +44,32 @@ class MoveFinder {
 
             //var bestscore = (player==2)?-Infinity:Infinity, sc=0;
             if(opponent == 2) //maximum for opponent==1
-            score = possibleMoves.reduce( (bestscore, move) => {
-                score = this.minmaxscore(move, opponent, board, depth+1);
-                if(score > bestscore) return score;
-                else return bestscore;
-            }, -Infinity); else  //minimum for opponent==1
-            score = possibleMoves.reduce( (bestscore, move) => {
-                score = this.minmaxscore(move, opponent, board, depth+1);
-                if(score < bestscore) return score;
-                else return bestscore;
-            }, Infinity);
-            // possibleMoves.forEach( (move)=> {
-            //     sc = this.minmaxscore(move, opponent, board,depth+1);
-            //     if( (opponent==2 && sc > bestscore) ||
-            //         (opponent==1 && sc < bestscore))
-            //             bestscore = sc; //opponent chooses a best move.
-            // });
-            // score = bestscore;
+            {
+                var bestscore = -Infinity;
+                for(var i=0;i<possibleMoves.length;i++) {
+                    var opmove = possibleMoves[i];
+                    bestscore = Math.max(bestscore, this.minmaxscore(opmove, opponent, board, depth+1, alpha, beta));
+                    alpha = Math.max(bestscore, alpha);
+                    if(alpha >= beta) break;
+                }
+                score = bestscore;
+            } else {
+                var bestscore = Infinity;
+                for(var i=0;i<possibleMoves.length;i++) {
+                    var opmove = possibleMoves[i];
+                    bestscore = Math.min(bestscore, this.minmaxscore(opmove, opponent, board, depth+1, alpha, beta));
+                    beta = Math.min(bestscore, beta);
+                    if(alpha >= beta) break;
+                }
+                score = bestscore;
+            }
         }
 
         this.undoMove(move, board, undoinfo.deadpieces);
         if(undoinfo.promoted) board[move.piece.i][move.piece.j]-=2; //demote if promoted
 
         //self.console.log("forplayer:",player,"score:",score);
-        return mult*score;
+        return score;
     }
 
     /**
