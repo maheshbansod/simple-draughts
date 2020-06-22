@@ -41,6 +41,8 @@ class Game {
         this.hasai = true;
         this.isai = [0,1,0]; //set black to AI
 
+        this.moveslist = [];
+
         this.possibleMoves = null;
         this.intermeds = [];
 
@@ -417,6 +419,7 @@ class Game {
                 capmoves[i].moves.forEach( (elem)=>{
                     this.moveposes.push(elem.jumpat);
                 } );
+                this.moveslist.push(capmoves[i]);
 
                 return capmoves[i].moves.length;
             }
@@ -469,6 +472,7 @@ class Game {
                     this.moveposes = [this.selected];
                     this.makeJump(this.selected, {i,j});
                     this.moveposes.push({i:i,j:j});
+                    this.moveslist.push({type:'jump', piece: this.selected, move: {i:i, j:j}});
                     this.nextTurn();
                     //console.log("hello hello\nhello hello");
                 } else if(this.possibleMoves.pboard.ends.some((el)=>(el.i==i && el.j==j))) {//capturing move maybe
@@ -529,6 +533,7 @@ class Game {
             if(move.type == 'capture') {
                 move.moves.forEach( (elem)=> self.moveposes.push(elem.jumpat));
             } else self.moveposes.push(move.move);
+            self.moveslist.push(move);
             self.drawBoard();
             self.nextTurn();
             self.moveWorkingDone();
