@@ -414,6 +414,8 @@ class Game {
                 if(notsame) continue;
                 //at this point both sets are same. so make the move
                 this.doCapture(this.selected, capmoves[i].moves);
+                capmoves[i].piece = this.selected;
+                capmoves[i].player = this.turn;
                 //also setting the moveposes array to mark the board. MAYBE MAKE IT IN A DIFF FUNCTION LATER
                 this.moveposes = [this.selected];
                 capmoves[i].moves.forEach( (elem)=>{
