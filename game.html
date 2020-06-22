@@ -6,9 +6,29 @@
             html, body {
                 margin:0;
                 padding: 0;
+                font-family: Arial, Helvetica, sans-serif;
             }
-            .canvascontainer {
-                text-align: center;
+            .container {
+                display: flex;
+                justify-content: space-between;
+            }
+
+            #history {
+                width:30%;
+                border-left: 3px solid grey;
+                padding:10px;
+            }
+            
+            li {
+                list-style: none;
+            }
+
+            ul#moveslist {
+                padding:0;
+            }
+
+            ul#moveslist li:nth-child(even) {
+                background-color: grey;
             }
 
             #statusdiv {
@@ -31,8 +51,16 @@
                 <div id="message"></div>
                 <div id="currentturn"></div>
             </div>
-            <div class = "canvascontainer">
+            <div class = "container">
+                <div></div>
                 <canvas id="gamecanvas"></canvas>
+                <div id="history">
+                    <div><h3>History</h3></div>
+                    <div>
+                        <ul id="moveslist">
+                        </ul>
+                    </div>
+                </div>
             </div>
         <div>
 
@@ -43,6 +71,7 @@
             game = new Game(ctx);
             var statdiv = document.getElementById('currentturn');
             var msgdiv = document.getElementById('message');
+            var moveslist = document.getElementById('moveslist');
 
             game.resizeCanvas(window.innerWidth*4/5, window.innerHeight*4/5);
             window.addEventListener('resize', () => {
@@ -58,7 +87,7 @@
             });
 
             canvas.addEventListener('click',function(event) {
-                updateStatus();
+                updateStuff();
             });
 
             game.moveWorkingStart = () => {
@@ -68,19 +97,31 @@
 
             game.moveWorkingDone = () => {
                 msgdiv.innerHTML = "";
-                updateStatus();
+                updateStuff();
             }
 
-            function updateStatus() {
+            function updateStuff() {
                 var turn = game.turn;
                 if(turn != -1) {
                     statdiv.innerHTML = (turn==1)?"Turn: Black":"Turn: Red";
                 } else {
                     statdiv.innerHTML = game.gameEndedMessage();
                 }
+                if(moveslist.getElementsByTagName('li').length != game.moveslist.length) {
+                    //this assumes UI list length will always be lesser than `game` movelist length.
+                    //TODO: change this with maybe event handling of custom events i.e. on change on moveslist
+                    var i = moveslist.getElementsByTagName('li').length;
+                    while(i < game.moveslist.length) {
+                        var movei = game.moveslist[i];
+                        var moveli = document.createElement('li');
+                        moveli.appendChild(document.createTextNode("["+movei.type+"]"+"("+movei.piece.i+","+movei.piece.j+")"));
+                        moveslist.appendChild(moveli);
+                        i++;
+                    }
+                }
             }
 
-            updateStatus();
+            updateStuff();
             //game.hasai = false; //disable ai till a better one is made
 
             game.drawBoard();
