@@ -7,16 +7,31 @@
                 margin:0;
                 padding: 0;
                 font-family: Arial, Helvetica, sans-serif;
+                height: 100%;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
             }
             .container {
                 display: flex;
+                align-items: flex-start;
                 justify-content: space-between;
+                height: 100%;
+                min-height: 0;
             }
 
             #history {
                 width:30%;
                 border-left: 3px solid grey;
                 padding:10px;
+                padding-bottom:0;
+                padding-top: 0;
+                height:100%;
+                display: flex;
+                flex-flow: column;
+                max-height: 100%;
             }
             
             li {
@@ -25,6 +40,7 @@
 
             ul#moveslist {
                 padding:0;
+                overflow-y: auto;
             }
 
             ul#moveslist li:nth-child(even) {
@@ -46,7 +62,7 @@
         </style>
     </head>
     <body>
-        <div style="display: flex; flex-direction: column;">
+        <div style="display: flex; flex-direction: column;height:100%;">
             <div id="statusdiv">
                 <div id="message"></div>
                 <div id="currentturn"></div>
@@ -62,24 +78,24 @@
                     </div>
                 </div>
             </div>
-        <div>
+        </div>
 
         <script src="game.js"></script>
         <script>
             var ctx = document.getElementById('gamecanvas').getContext('2d');
+            var canvas = this.ctx.canvas;
 
             game = new Game(ctx);
             var statdiv = document.getElementById('currentturn');
             var msgdiv = document.getElementById('message');
             var moveslist = document.getElementById('moveslist');
 
-            game.resizeCanvas(window.innerWidth*4/5, window.innerHeight*4/5);
+            game.resizeCanvas(canvas.parentElement.clientWidth*4/5, canvas.parentElement.clientHeight*4/5);
             window.addEventListener('resize', () => {
-                game.resizeCanvas(window.innerWidth*4/5, window.innerHeight*4/5);
+                game.resizeCanvas(canvas.parentElement.clientWidth*4/5, canvas.parentElement.clientHeight*4/5);
                 game.drawBoard();
             });
 
-            var canvas = this.ctx.canvas;
             canvas.addEventListener('click', function(event) {
                 var x = event.pageX - canvas.offsetLeft;
                 var y = event.pageY - canvas.offsetTop;
