@@ -44,7 +44,15 @@
             }
 
             ul#moveslist li:nth-child(even) {
-                background-color: grey;
+                background-color: #f1eeee;
+            }
+
+            ul#moveslist li:nth-child(odd) {
+                background-color: white;
+            }
+
+            ul#moveslist > li:first-child {
+                background-color:green;
             }
 
             #statusdiv {
@@ -130,8 +138,9 @@
                     while(i < game.moveslist.length) {
                         var movei = game.moveslist[i];
                         var moveli = document.createElement('li');
+                        moveli.style.borderLeft="2px solid "+game.piececolors[movei.player - 1];
                         moveli.appendChild(document.createTextNode("["+movei.type+"]"+"("+movei.piece.i+","+movei.piece.j+")"));
-                        moveslist.appendChild(moveli);
+                        moveslist.insertBefore(moveli, moveslist.firstChild);
                         i++;
                     }
                 }
