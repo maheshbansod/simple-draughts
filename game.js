@@ -474,7 +474,7 @@ class Game {
                     this.moveposes = [this.selected];
                     this.makeJump(this.selected, {i,j});
                     this.moveposes.push({i:i,j:j});
-                    this.moveslist.push({type:'jump', piece: this.selected, move: {i:i, j:j}});
+                    this.moveslist.push({type:'jump', piece: this.selected, move: {i:i, j:j}, player: this.turn});
                     this.nextTurn();
                     //console.log("hello hello\nhello hello");
                 } else if(this.possibleMoves.pboard.ends.some((el)=>(el.i==i && el.j==j))) {//capturing move maybe
@@ -531,11 +531,12 @@ class Game {
         worker.onmessage = function(e) {
             var move = e.data;
             self.doMove(move);
-            self.moveposes = [move.piece];
+            move.player = self.turn;
+            self.moveposes = [move.piece]; //stores the positions of the current move only
             if(move.type == 'capture') {
                 move.moves.forEach( (elem)=> self.moveposes.push(elem.jumpat));
             } else self.moveposes.push(move.move);
-            self.moveslist.push(move);
+            self.moveslist.push(move); //stores list of all moves
             self.drawBoard();
             self.nextTurn();
             self.moveWorkingDone();
